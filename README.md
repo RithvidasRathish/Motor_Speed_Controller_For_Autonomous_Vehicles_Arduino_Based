@@ -1,6 +1,6 @@
-# 🌡️ Smart Motor Control System using DHT11 and IR Sensor
+# 🌡️ Motor_Speed_Controller_For_Autonomous_Vehicles_Arduino_Based
 
-A temperature- and obstacle-aware smart motor control system built using an ESP-compatible microcontroller. The system dynamically adjusts motor speed based on DHT11 temperature readings and IR sensor-based obstacle detection using periodic tasks scheduled by the TaskScheduler library.
+A temperature- and obstacle-aware smart motor control system built using a STM32 microcontroller. The system dynamically adjusts motor speed based on DHT11 temperature readings and IR sensor-based obstacle detection using periodic tasks scheduled by the TaskScheduler library.
 
 ---
 
