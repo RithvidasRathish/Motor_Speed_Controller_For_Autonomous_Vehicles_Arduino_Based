@@ -1,4 +1,4 @@
-# 🌡️ Motor_Speed_Controller_For_Autonomous_Vehicles_Arduino_Based
+## 🌡️ Motor_Speed_Controller_For_Autonomous_Vehicles_Arduino_Based
 
 A temperature- and obstacle-aware smart motor control system built using a STM32 microcontroller. The system dynamically adjusts motor speed based on DHT11 temperature readings and IR sensor-based obstacle detection using periodic tasks scheduled by the TaskScheduler library.
 
@@ -76,12 +76,6 @@ You can install these libraries via the Arduino Library Manager.
 3. Select the correct board and port.
 4. Upload the code.
 5. Monitor output using the Serial Monitor at 115200 baud.
-
----
-
-## 📸 Demo
-
-> *(Include image or video link of the system running, if available)*
 
 ---
 
