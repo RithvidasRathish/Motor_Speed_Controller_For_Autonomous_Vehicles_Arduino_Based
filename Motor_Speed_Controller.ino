@@ -1,146 +1,136 @@
+/**
+ * @file smart_motor_control.ino
+ * @brief Intelligent motor control system using DHT11 temperature and IR obstacle detection
+ * 
+ * @author 
+ * Rithvidas Rathish
+ * 
+ * @details
+ * This sketch uses a DHT11 sensor to monitor temperature and an IR sensor to detect obstacles.
+ * Based on temperature and obstacle data, the motor speed is adjusted using PWM.
+ * TaskScheduler library is used to periodically check sensor data.
+ */
 
- 
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
-// #include <DHT_U.h>
 #include <TaskScheduler.h>
 
-#define DHTPIN D4
+// ===================== Pin Definitions =====================
+#define DHTPIN D4           ///< Pin connected to DHT11 sensor
+#define IRSensor A1         ///< Pin connected to IR obstacle sensor
+#define ENABLE_PIN 9        ///< Motor driver enable pin (PWM)
+#define IN1_PIN 8           ///< Motor driver IN1 pin
+#define IN2_PIN 7           ///< Motor driver IN2 pin
 
-#define IRSensor A1
-#define ENABLE_PIN 9    // Pin to enable the motor driver
-#define IN1_PIN 8       // Pin connected to IN1 of L293D
-#define IN2_PIN 7 
+#define DHTTYPE DHT11       ///< Define sensor type for DHT
 
+// ===================== Global Variables =====================
+int sensorStatus = 0;
+int a = 0;                  ///< PWM value for motor control
+int temp = 0;               ///< Current temperature reading
 
-#define DHTTYPE    DHT11   
+DHT_Unified dht(DHTPIN, DHTTYPE);  ///< DHT11 sensor object
+uint32_t delayMS;                  ///< Delay based on sensor spec
 
-int sensorStatus=0;
-int a=0;
-int temp=0;
-
-
-DHT_Unified dht(DHTPIN, DHTTYPE);
-
-uint32_t delayMS;
-// Callback methods prototypes
+// ===================== Task Callbacks =====================
+/**
+ * @brief Reads temperature and adjusts motor control based on thresholds.
+ */
 void t1Callback();
-void t2Callback();
-// void t3Callback();
 
-//Tasks
-Task t4();
+/**
+ * @brief Reads IR sensor to detect obstacle and adjusts motor control accordingly.
+ */
+void t2Callback();
+
+// ===================== Tasks =====================
+Task t4();  // Placeholder (not used)
 Task t1(2000, TASK_FOREVER , &t1Callback);
 Task t2(3000, TASK_FOREVER, &t2Callback);
-// Task t3(5000, TASK_FOREVER, &t3Callback);
 
 Scheduler runner;
 
+// ===================== Task Implementations =====================
 
 void t1Callback() {
-  delay(delayMS);
+  delay(delayMS);  // Wait based on sensor timing requirement
+
   sensors_event_t event;
   dht.temperature().getEvent(&event);
+
   if (isnan(event.temperature)) {
     Serial.println(F("Error reading temperature!"));
-  }
-  else {
+  } else {
+    temp = event.temperature;
     Serial.print(F("Temperature: "));
-    temp=event.temperature;
     Serial.print(temp);
     Serial.println(F("°C"));
   }
 
-    Serial.print("t1: ");
-    Serial.println(millis());
-    
-    if (temp>33) {
-      t2.disable();
-      a=170;
-      Serial.println("Motor is too hot");
-    }
-    else {
-      a=255;
-      t2.enable();
-      Serial.println("Motor is in Normal Temperature");
-    }
-    
-    // if (temp) {
-      
-    //   // runner.deleteTask(t3);
-    //   t2.setInterval(500);
-    //   Serial.println("t1: disable t3 and delete it from the chain. t2 interval set to 500");
-    // }
+  if (temp > 33) {
+    t2.disable();
+    a = 170;
+    Serial.println("Motor is too hot");
+  } else {
+    a = 255;
+    t2.enable();
+    Serial.println("Motor is in Normal Temperature");
+  }
+
+  Serial.print("t1: ");
+  Serial.println(millis());
 }
 
 void t2Callback() {
   sensorStatus = digitalRead(IRSensor); 
   
-  if (sensorStatus == 1) // Check if the pin high or not
-  {
-    // if the pin is high turn off the onboard Led
-    a=255; // LED LOW
-    Serial.println("Obstacle is not Detected"); // print Motion Detected! on the serial monitor window
-  }
-  else  {
-    //else turn on the onboard LED
-    a=150; // LED High
-    Serial.println("Obstacle is Deteced"); // print Motion Ended! on the serial monitor window
+  if (sensorStatus == 1) {
+    a = 255;
+    Serial.println("Obstacle is not Detected");
+  } else {
+    a = 150;
+    Serial.println("Obstacle is Detected");
   }
 
-    Serial.print("t2: ");
-    Serial.println(millis());
-  
+  Serial.print("t2: ");
+  Serial.println(millis());
 }
 
-void t3Callback() {
-  
-    Serial.print("t3: ");
-    Serial.println(millis());
-    
-  
-}
-
-void setup () {
+// ===================== Setup =====================
+void setup() {
   Serial.begin(115200);
+
   pinMode(IRSensor, INPUT);
   pinMode(ENABLE_PIN, OUTPUT);
   pinMode(IN1_PIN, OUTPUT);
   pinMode(IN2_PIN, OUTPUT);
+
   dht.begin();
-  Serial.println(F("DHTxx Unified Sensor Example"));
-  
+  Serial.println(F("DHTxx Unified Sensor Initialized"));
+
   sensor_t sensor;
   dht.temperature().getSensor(&sensor);
-
-  
   delayMS = sensor.min_delay / 1000;
-  Serial.println("Scheduler TEST");
-  
-  runner.init();
-  Serial.println("Initialized scheduler");
-  
-  runner.addTask(t1);
-  Serial.println("added t1");
-  
-  runner.addTask(t2);
-  Serial.println("added t2");
 
-  delay(5000);
-  
+  runner.init();
+  runner.addTask(t1);
+  runner.addTask(t2);
+
+  delay(5000);  // Wait for sensors to stabilize
+
   t1.enable();
-  Serial.println("Enabled t1");
   t2.enable();
-  Serial.println("Enabled t2");
+
+  Serial.println("Scheduler initialized and tasks enabled");
 }
 
-
-void loop () {
+// ===================== Main Loop =====================
+void loop() {
   runner.execute();
-  analogWrite(ENABLE_PIN,a);
-  digitalWrite(IN1_PIN, HIGH); // Set direction
-  digitalWrite(IN2_PIN, LOW);
-  delay(1000);  // Rotate for 3 seconds
-  
 
+  analogWrite(ENABLE_PIN, a);         // Set motor speed
+  digitalWrite(IN1_PIN, HIGH);        // Set motor direction
+  digitalWrite(IN2_PIN, LOW);
+
+  delay(1000);  // Maintain motion for stability
 }
